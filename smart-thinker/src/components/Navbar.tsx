@@ -29,8 +29,8 @@ const ECOSYSTEM_APPS = [
 ]
 
 const THIRD_PARTY_APPS = [
-  { name: 'Flock Social', href: 'https://porel.up.railway.app/flock/home', icon: ExternalLink },
-  { name: 'Porel Ai', href: 'https://porel.up.railway.app/porel', icon: ExternalLink },
+  { name: 'Flock Social', href: 'https://porel.up.railway.app/flock/home', icon: ExternalLink, favicon: 'https://porel.up.railway.app/fav_icon.png' },
+  { name: 'Porel Ai', href: 'https://porel.up.railway.app/porel', icon: ExternalLink, favicon: 'https://porel.up.railway.app/fav_icon.png' },
   { name: 'VibeSky', href: 'https://silver-moonbeam-5d7d68.netlify.app', icon: ExternalLink },
 ]
 
@@ -182,7 +182,11 @@ export default function Navbar() {
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       onClick={() => setShowEcosystem(false)}
                     >
-                      <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                      {app.favicon ? (
+                        <img src={app.favicon} alt="" className="w-4 h-4 rounded-sm object-contain" loading="lazy" />
+                      ) : (
+                        <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                      )}
                       {app.name}
                     </a>
                   )
@@ -330,7 +334,11 @@ export default function Navbar() {
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   onClick={() => setMobileOpen(false)}
                 >
-                  <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  {app.favicon ? (
+                    <img src={app.favicon} alt="" className="w-4 h-4 rounded-sm object-contain" loading="lazy" />
+                  ) : (
+                    <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  )}
                   {app.name}
                 </a>
               )
