@@ -40,61 +40,12 @@ export default function LinkAccountModal({ onClose, onLinked }: LinkAccountModal
   }, [])
 
   const handleGoogleSignIn = async () => {
-    if (!window.firebase) {
-      setError('Firebase SDK not loaded. Refresh the page.')
-      return
-    }
     setError('')
     setLoading(true)
     try {
-      const auth = window.firebase.auth()
-      const provider = new window.firebase.auth.GoogleAuthProvider()
-      provider.addScope('https://www.googleapis.com/auth/gmail.readonly')
-      provider.addScope('https://www.googleapis.com/auth/gmail.send')
-      provider.addScope('https://www.googleapis.com/auth/gmail.modify')
-      provider.addScope('https://www.googleapis.com/auth/userinfo.email')
-      provider.addScope('https://www.googleapis.com/auth/userinfo.profile')
-      provider.setCustomParameters({ prompt: 'consent', access_type: 'offline' })
-
-      const result = await auth.signInWithPopup(provider)
-      const credential = result.credential
-      const accessToken = credential?.accessToken
-      if (!accessToken) {
-        setError('Failed to get Google access token.')
-        setLoading(false)
-        return
-      }
-
-      const userEmail = result.additionalUserInfo?.profile?.email || result.user?.email
-      const userName = result.additionalUserInfo?.profile?.name || result.user?.displayName || 'Gmail'
-
-      const linkRes = await fetch('/api/email/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: 'google',
-          email: userEmail,
-          accessToken,
-          label: userName,
-        }),
-      })
-
-      if (!linkRes.ok) {
-        const data = await linkRes.json()
-        setError(data.error || 'Failed to link Gmail account.')
-        setLoading(false)
-        return
-      }
-
-      const linkData = await linkRes.json()
-      onLinked(linkData.account)
-      setLoading(false)
+      window.location.href = '/api/email/google/start'
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        setError('')
-      } else {
-        setError(err.message || 'Google sign-in failed.')
-      }
+      setError(err.message || 'Google sign-in failed.')
       setLoading(false)
     }
   }
