@@ -1,0 +1,16 @@
+{
+  "name": "@smart-thinker/auth",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@smart-thinker/prisma": "1.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "next-auth": "^4.24.7"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.6",
+    "typescript": "^5.5.0"
+  }
+}

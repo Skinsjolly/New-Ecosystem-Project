@@ -1,0 +1,11 @@
+{
+  "name": "smart-thinker-ecosystem",
+  "private": true,
+  "scripts": {
+    "dev:search": "cd smart-thinker && npm run dev",
+    "dev:mail": "cd smart-thinker-mail && npm run dev",
+    "dev:docs": "cd smart-thinker-docs && npm run dev",
+    "dev:slides": "cd smart-thinker-slides && npm run dev",
+    "dev:sheets": "cd smart-thinker-sheets && npm run dev"
+  }
+}

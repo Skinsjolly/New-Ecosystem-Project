@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String    @unique
+  password      String?
+  googleId      String?   @unique
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions        Session[]
+  quickLinks      QuickLink[]
+  linkedAccounts  LinkedAccount[]
+  documents       Document[]
+  slides          SlidePresentation[]
+  spreadsheets    Spreadsheet[]
+  emails          EmailAccount[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QuickLink {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  url       String
+  icon      String?
+  position  Int      @default(0)
+  visits    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LinkedAccount {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String
+  providerAccountId String
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  email        String?
+  label        String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, providerAccountId])
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Untitled Document")
+  content   String   @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SlidePresentation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Untitled Presentation")
+  slides    String   @default("[]")
+  theme     String   @default("default")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Spreadsheet {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Untitled Spreadsheet")
+  data      String   @default("{}")
+  sheets    String   @default("[{\"name\":\"Sheet1\",\"data\":[]}]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailAccount {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String
+  email        String
+  label        String?
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  imapHost     String?
+  imapPort     Int?
+  smtpHost     String?
+  smtpPort     Int?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
