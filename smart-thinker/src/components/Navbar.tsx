@@ -29,7 +29,6 @@ const ECOSYSTEM_APPS = [
 ]
 
 const THIRD_PARTY_APPS = [
-  { name: 'Flock Social', href: 'https://porel.up.railway.app/flock/home', icon: ExternalLink, favicon: 'https://porel.up.railway.app/fav_icon.png' },
   { name: 'Porel Ai', href: 'https://porel.up.railway.app/porel', icon: ExternalLink, favicon: 'https://porel.up.railway.app/fav_icon.png' },
   { name: 'VibeSky', href: 'https://silver-moonbeam-5d7d68.netlify.app', icon: ExternalLink },
 ]
