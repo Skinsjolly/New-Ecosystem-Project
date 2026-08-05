@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Search, Mail, FileText, Presentation, Sheet, MessageCircle, LogOut, ChevronDown, Sun, Moon, Menu, X, MessageSquare, ExternalLink } from 'lucide-react'
+import { Search, Mail, FileText, Presentation, Sheet, MessageCircle, LogOut, ChevronDown, Sun, Moon, Menu, X, MessageSquare, ExternalLink, Rocket } from 'lucide-react'
 import { useTheme } from '@/lib/ThemeContext'
 
 declare global {
@@ -26,11 +26,11 @@ const ECOSYSTEM_APPS = [
   { name: 'Docs', href: process.env.NEXT_PUBLIC_DOCS_URL || 'http://localhost:3002', icon: FileText },
   { name: 'Slides', href: process.env.NEXT_PUBLIC_SLIDES_URL || 'http://localhost:3003', icon: Presentation },
   { name: 'Sheets', href: process.env.NEXT_PUBLIC_SHEETS_URL || 'http://localhost:3004', icon: Sheet },
+  { name: 'VibeSky', href: 'https://silver-moonbeam-5d7d68.netlify.app', icon: Rocket, img: '/vibesky.png' },
 ]
 
 const THIRD_PARTY_APPS = [
   { name: 'Porel Ai', href: 'https://porel.up.railway.app/porel', icon: ExternalLink, favicon: 'https://porel.up.railway.app/fav_icon.png' },
-  { name: 'VibeSky', href: 'https://silver-moonbeam-5d7d68.netlify.app', icon: ExternalLink },
 ]
 
 function getFirebaseAuth(): any {
@@ -158,7 +158,11 @@ export default function Navbar() {
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       onClick={() => setShowEcosystem(false)}
                     >
-                      <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                      {app.img ? (
+                        <img src={app.img} alt="" className="w-4 h-4 rounded-sm object-contain" loading="lazy" />
+                      ) : (
+                        <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                      )}
                       {app.name}
                     </Link>
                   )
@@ -311,7 +315,11 @@ export default function Navbar() {
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   onClick={() => setMobileOpen(false)}
                 >
-                  <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  {app.img ? (
+                    <img src={app.img} alt="" className="w-4 h-4 rounded-sm object-contain" loading="lazy" />
+                  ) : (
+                    <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  )}
                   {app.name}
                 </Link>
               )
