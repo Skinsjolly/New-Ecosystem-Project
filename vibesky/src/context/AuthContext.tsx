@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { ensureProfile, subscribeUser } from '../lib/db'
+import { subscribeUser } from '../lib/db'
 import type { Profile } from '../types'
 
 type AuthCtx = {
@@ -18,10 +18,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    return onAuthStateChanged(auth, (u) => {
       setUser(u)
       if (u) {
-        await ensureProfile(u.uid, u.email ?? '')
         const unsubProfile = subscribeUser(u.uid, setProfile)
         setLoading(false)
         return () => {
@@ -31,7 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null)
       setLoading(false)
     })
-    return () => unsub()
   }, [])
 
   return <Ctx.Provider value={{ user, profile, loading }}>{children}</Ctx.Provider>

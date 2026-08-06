@@ -72,15 +72,15 @@ export async function getUserByHandle(handle: string): Promise<Profile | null> {
   return mapProfile(snap.docs[0])
 }
 
-export async function ensureProfile(uid: string, email: string) {
-  const existing = await getUser(uid)
-  if (existing) return existing
-  const base = email.split('@')[0].replace(/[^a-z0-9]/gi, '')
-  const handle = (base || 'user') + uid.slice(0, 4)
+export async function handleExists(handle: string): Promise<boolean> {
+  return (await getUserByHandle(handle)) !== null
+}
+
+export async function createProfile(uid: string, handle: string, displayName: string) {
   await setDoc(doc(usersCol, uid), {
-    handle,
+    handle: handle.toLowerCase(),
     handleLower: handle.toLowerCase(),
-    name: email.split('@')[0] || 'New vibe',
+    name: displayName,
     bio: '',
     avatarUrl: '',
     bannerUrl: '',
@@ -89,14 +89,13 @@ export async function ensureProfile(uid: string, email: string) {
     followingCount: 0,
     createdAt: serverTimestamp()
   })
-  return getUser(uid)
 }
 
 export async function updateUserProfile(uid: string, patch: Partial<Profile>) {
   const clean: Record<string, unknown> = { ...patch }
-  if (patch.handle !== undefined) {
-    clean.handleLower = patch.handle.toLowerCase()
-  }
+  // username (handle) is permanent and cannot be changed
+  delete clean.handle
+  delete clean.handleLower
   delete clean.uid
   delete clean.createdAt
   await updateDoc(doc(usersCol, uid), clean)

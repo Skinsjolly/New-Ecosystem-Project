@@ -8,7 +8,6 @@ import Avatar from './Avatar'
 export default function EditProfileModal({ profile, onClose }: { profile: Profile; onClose: () => void }) {
   const { user } = useAuth()
   const [name, setName] = useState(profile.name)
-  const [handle, setHandle] = useState(profile.handle)
   const [bio, setBio] = useState(profile.bio)
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl)
   const [busy, setBusy] = useState(false)
@@ -16,14 +15,13 @@ export default function EditProfileModal({ profile, onClose }: { profile: Profil
 
   async function save() {
     if (!user || busy) return
-    if (!/^[a-z0-9_]{3,30}$/i.test(handle.trim())) {
-      alert('Handle must be 3-30 characters (letters, numbers, underscore).')
+    if (!name.trim()) {
+      alert('Display name cannot be empty.')
       return
     }
     setBusy(true)
     await updateUserProfile(user.uid, {
       name: name.trim(),
-      handle: handle.trim().toLowerCase(),
       bio: bio.trim(),
       avatarUrl
     })
@@ -63,11 +61,11 @@ export default function EditProfileModal({ profile, onClose }: { profile: Profil
           />
         </div>
 
-        <label className="block text-xs text-ink2 mb-1">Name</label>
+        <label className="block text-xs text-ink2 mb-1">Display name</label>
         <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-transparent border rounded-lg px-3 py-2 text-sm outline-none mb-3" style={{ borderColor: 'var(--stroke)' }} />
 
-        <label className="block text-xs text-ink2 mb-1">Handle</label>
-        <input value={handle} onChange={(e) => setHandle(e.target.value)} className="w-full bg-transparent border rounded-lg px-3 py-2 text-sm outline-none mb-3" style={{ borderColor: 'var(--stroke)' }} />
+        <label className="block text-xs text-ink2 mb-1">Username</label>
+        <input value={`@${profile.handle}`} readOnly className="w-full bg-transparent border rounded-lg px-3 py-2 text-sm outline-none opacity-60 mb-3" style={{ borderColor: 'var(--stroke)' }} />
 
         <label className="block text-xs text-ink2 mb-1">Bio</label>
         <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="w-full bg-transparent border rounded-lg px-3 py-2 text-sm outline-none resize-none mb-4" style={{ borderColor: 'var(--stroke)' }} />
