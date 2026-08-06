@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Search, Mail, FileText, Presentation, Sheet, MessageCircle, LogOut, ChevronDown, Sun, Moon, Menu, X, MessageSquare, ExternalLink, Sparkles } from 'lucide-react'
+import { Search, Mail, FileText, Presentation, Sheet, MessageCircle, LogOut, ChevronDown, Sun, Moon, Menu, X, MessageSquare, ExternalLink, Sparkles, Rocket } from 'lucide-react'
 import { useTheme } from '@/lib/ThemeContext'
 
 declare global {
@@ -27,6 +27,7 @@ const ECOSYSTEM_APPS = [
   { name: 'Slides', href: process.env.NEXT_PUBLIC_SLIDES_URL || 'http://localhost:3003', icon: Presentation },
   { name: 'Sheets', href: process.env.NEXT_PUBLIC_SHEETS_URL || 'http://localhost:3004', icon: Sheet },
   { name: 'Aurora', href: 'https://vibesky.vercel.app', icon: Sparkles, img: 'https://vibesky.vercel.app/favicon.svg' },
+  { name: 'VibeSky', href: 'https://vibesky-5pf.pages.dev', icon: Rocket, img: '/vibesky.png' },
 ]
 
 const THIRD_PARTY_APPS = [
