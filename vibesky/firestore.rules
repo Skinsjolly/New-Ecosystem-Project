@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Users: read any profile, only the owner may update/create their own.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+
+      // Notifications inbox: only the owner can read/update (mark read).
+      match /notifications/{nid} {
+        allow read, update, delete: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn();
+      }
+
+      // Following / followers relations: eval by the acting user.
+      match /following/{target} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == uid;
+      }
+      match /followers/{follower} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == follower;
+      }
+    }
+
+    // Posts: anyone signed in can read all posts, any signed-in user can create.
+    // Only the author can delete their own post.
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+
+      // Likes / reposts (acting user only)
+      match /likes/{uid} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == uid;
+      }
+      match /reposts/{uid} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == uid;
+      }
+
+      // Comments: any signed-in user can add
+      match /comments/{cid} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.auth.uid == request.resource.data.authorId;
+        allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      }
+    }
+  }
+}

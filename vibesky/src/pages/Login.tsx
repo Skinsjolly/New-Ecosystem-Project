@@ -1,0 +1,64 @@
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../lib/firebase'
+
+export default function Login() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password)
+      navigate('/')
+    } catch (err: any) {
+      setError(err?.code === 'auth/user-not-found' ? 'No account with that email.' : err?.code === 'auth/wrong-password' ? 'Incorrect password.' : 'Sign in failed. Check your details.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-30" style={{ background: 'linear-gradient(120deg,#ff7ac6,#8f5bff)' }} />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-3xl opacity-25" style={{ background: 'linear-gradient(120deg,#4dd0ff,#8f5bff)' }} />
+      <div className="relative w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-14 h-14 rounded-2xl brand-gradient flex items-center justify-center mb-3">
+            <Sparkles className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight brand-text">Aurora</h1>
+          <p className="text-ink2 text-sm mt-1">Where ideas come to light.</p>
+        </div>
+        <form onSubmit={submit} className="panel rounded-2xl p-6 space-y-4 rise">
+          <h2 className="font-bold text-lg">Welcome back</h2>
+          <div>
+            <label className="block text-xs text-ink2 mb-1">Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-transparent border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent" style={{ borderColor: 'var(--stroke)' }} />
+          </div>
+          <div>
+            <label className="block text-xs text-ink2 mb-1">Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full bg-transparent border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent" style={{ borderColor: 'var(--stroke)' }} />
+          </div>
+          {error && <p className="text-sm text-red-400">{error}</p>}
+          <button type="submit" disabled={busy} className="btn-primary w-full rounded-xl py-2.5 text-sm disabled:opacity-50">
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+          <p className="text-center text-sm text-ink2">
+            New here?{' '}
+            <Link to="/signup" className="text-accent font-medium hover:underline">
+              Create an account
+            </Link>
+          </p>
+        </form>
+      </div>
+    </div>
+  )
+}
