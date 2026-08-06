@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Settings } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Settings, MessagesSquare } from 'lucide-react'
 import type { Profile, Post } from '../types'
 import { useAuth } from '../context/AuthContext'
-import { getUserByHandle, subscribeUser, subscribeUserPosts, timeAgo } from '../lib/db'
+import { getUserByHandle, subscribeUser, subscribeUserPosts, timeAgo, getOrCreateConversation } from '../lib/db'
 import Avatar from '../components/Avatar'
 import FollowButton from '../components/FollowButton'
 import PostCard from '../components/PostCard'
@@ -11,6 +11,7 @@ import EditProfileModal from '../components/EditProfileModal'
 
 export default function Profile() {
   const { handle } = useParams<{ handle: string }>()
+  const navigate = useNavigate()
   const { user, profile: me } = useAuth()
   const [target, setTarget] = useState<Profile | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
@@ -77,6 +78,17 @@ export default function Profile() {
                   className="panel-2 rounded-full px-4 py-1.5 text-sm flex items-center gap-2 hover:text-ink transition-colors"
                 >
                   <Settings className="w-4 h-4" /> Edit
+                </button>
+              )}
+              {!isMe && user && (
+                <button
+                  onClick={async () => {
+                    const id = await getOrCreateConversation(user.uid, target.uid)
+                    navigate(`/messages/${id}`)
+                  }}
+                  className="panel-2 rounded-full px-4 py-1.5 text-sm flex items-center gap-2 hover:text-ink transition-colors"
+                >
+                  <MessagesSquare className="w-4 h-4" /> Message
                 </button>
               )}
               {!isMe && <FollowButton targetUid={target.uid} />}

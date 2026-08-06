@@ -1,13 +1,15 @@
 import {
-  doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp,
+  doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp,
   collection, query, where, orderBy, limit, onSnapshot,
   getDocs, increment, runTransaction
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Profile, Post, Comment, NotificationItem, AuthorPublic } from '../types'
+import type { Profile, Post, Comment, NotificationItem, AuthorPublic, Sky, Conversation, Message } from '../types'
 
 const usersCol = collection(db, 'users')
 const postsCol = collection(db, 'posts')
+const skiesCol = collection(db, 'skies')
+const conversationsCol = collection(db, 'conversations')
 
 function authorOf(uid: string, profile?: Profile | null): AuthorPublic {
   return {
@@ -34,7 +36,8 @@ function mapPost(d: any): Post | null {
     createdAt: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now(),
     likeCount: data.likeCount ?? 0,
     repostCount: data.repostCount ?? 0,
-    commentCount: data.commentCount ?? 0
+    commentCount: data.commentCount ?? 0,
+    reactions: data.reactions ?? {}
   }
 }
 
@@ -257,12 +260,12 @@ export function subscribeReposted(postId: string, uid: string, cb: (reposted: bo
   return onSnapshot(doc(postsCol, postId, 'reposts', uid), (s) => cb(s.exists()))
 }
 
-export async function addComment(postId: string, uid: string, text: string) {
+export async function addComment(postId: string, uid: string, text: string, parentId = '') {
   const me = await getUser(uid)
   const author = authorOf(uid, me)
   const postRef = doc(postsCol, postId)
   const cRef = collection(postRef, 'comments')
-  await addDoc(cRef, { ...author, text, createdAt: serverTimestamp() })
+  await addDoc(cRef, { ...author, text, parentId, createdAt: serverTimestamp() })
   await updateDoc(postRef, { commentCount: increment(1) })
 }
 
@@ -279,10 +282,209 @@ export function subscribeComments(postId: string, cb: (comments: Comment[]) => v
         authorName: data.authorName,
         authorAvatar: data.authorAvatar,
         text: data.text,
+        parentId: data.parentId ?? '',
         createdAt: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now()
       }
     }))
   )
+}
+
+/* ---------------- Reactions ---------------- */
+
+export async function toggleReaction(postId: string, uid: string, emoji: string) {
+  const reacRef = doc(postsCol, postId, 'reactions', uid)
+  const postRef = doc(postsCol, postId)
+  await runTransaction(db, async (t) => {
+    const r = await t.get(reacRef)
+    const postSnap = await t.get(postRef)
+    const reactions: Record<string, number> = { ...(postSnap.data()?.reactions ?? {}) }
+    if (r.exists()) {
+      const prev = r.data().emoji as string
+      if (prev === emoji) {
+        t.delete(reacRef)
+        reactions[prev] -= 1
+        if (reactions[prev] <= 0) delete reactions[prev]
+      } else {
+        t.update(reacRef, { emoji })
+        reactions[prev] -= 1
+        if (reactions[prev] <= 0) delete reactions[prev]
+        reactions[emoji] = (reactions[emoji] || 0) + 1
+      }
+    } else {
+      t.set(reacRef, { uid, emoji, createdAt: serverTimestamp() })
+      reactions[emoji] = (reactions[emoji] || 0) + 1
+    }
+    t.update(postRef, { reactions })
+  })
+}
+
+export function subscribeMyReaction(postId: string, uid: string, cb: (emoji: string) => void): () => void {
+  return onSnapshot(doc(postsCol, postId, 'reactions', uid), (s) => cb(s.exists() ? (s.data().emoji as string) : ''))
+}
+
+/* ---------------- Skies (24h ephemeral) ---------------- */
+
+function mapSky(d: any): Sky {
+  const data = d.data()
+  return {
+    id: d.id,
+    authorId: data.authorId,
+    authorHandle: data.authorHandle,
+    authorName: data.authorName,
+    authorAvatar: data.authorAvatar,
+    text: data.text ?? '',
+    imageUrl: data.imageUrl ?? '',
+    createdAt: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now(),
+    expiresAt: data.expiresAt?.seconds ? data.expiresAt.seconds * 1000 : Date.now() + 24 * 3600 * 1000
+  }
+}
+
+export async function addSky(uid: string, text: string, imageUrl: string) {
+  const me = await getUser(uid)
+  const author = authorOf(uid, me)
+  await addDoc(skiesCol, {
+    ...author,
+    text,
+    imageUrl,
+    createdAt: serverTimestamp(),
+    expiresAt: new Date(Date.now() + 24 * 3600 * 1000)
+  })
+}
+
+export function subscribeSkies(cb: (skies: Sky[]) => void): () => void {
+  const q = query(skiesCol, orderBy('createdAt', 'desc'), limit(50))
+  return onSnapshot(q, (snap) => {
+    const now = Date.now()
+    cb(snap.docs.map(mapSky).filter((s) => s.expiresAt > now))
+  })
+}
+
+export async function deleteSky(id: string) {
+  await deleteDoc(doc(skiesCol, id))
+}
+
+/* ---------------- Conversations / Messages ---------------- */
+
+export function conversationId(a: string, b: string): string {
+  return [a, b].sort().join('_')
+}
+
+export async function getOrCreateConversation(uid1: string, uid2: string): Promise<string> {
+  const id = conversationId(uid1, uid2)
+  const ref = doc(conversationsCol, id)
+  const snap = await getDoc(ref)
+  if (snap.exists()) return id
+  await setDoc(ref, {
+    participants: [uid1, uid2],
+    createdAt: serverTimestamp(),
+    lastMessage: '',
+    lastMessageAt: serverTimestamp()
+  })
+  const [p1, p2] = await Promise.all([getUser(uid1), getUser(uid2)])
+  await Promise.all([
+    setDoc(doc(collection(usersCol, uid1, 'conversations'), id), {
+      otherUid: uid2,
+      otherName: p2?.name ?? 'User',
+      otherHandle: p2?.handle ?? '',
+      otherAvatar: p2?.avatarUrl ?? '',
+      lastMessage: '',
+      lastMessageAt: serverTimestamp(),
+      unread: 0
+    }),
+    setDoc(doc(collection(usersCol, uid2, 'conversations'), id), {
+      otherUid: uid1,
+      otherName: p1?.name ?? 'User',
+      otherHandle: p1?.handle ?? '',
+      otherAvatar: p1?.avatarUrl ?? '',
+      lastMessage: '',
+      lastMessageAt: serverTimestamp(),
+      unread: 0
+    })
+  ])
+  return id
+}
+
+export async function sendMessage(convId: string, senderId: string, text: string) {
+  const convRef = doc(conversationsCol, convId)
+  const convSnap = await getDoc(convRef)
+  const participants: string[] = convSnap.exists() ? (convSnap.data().participants as string[]) : [senderId]
+  await addDoc(collection(convRef, 'messages'), {
+    senderId,
+    text,
+    createdAt: serverTimestamp(),
+    readBy: [senderId]
+  })
+  await updateDoc(convRef, { lastMessage: text, lastMessageAt: serverTimestamp() })
+  await Promise.all(
+    participants.map((p) =>
+      updateDoc(doc(collection(usersCol, p, 'conversations'), convId), {
+        lastMessage: text,
+        lastMessageAt: serverTimestamp(),
+        unread: p === senderId ? 0 : increment(1)
+      })
+    )
+  )
+}
+
+export function subscribeConversations(uid: string, cb: (c: Conversation[]) => void): () => void {
+  const q = query(collection(usersCol, uid, 'conversations'), orderBy('lastMessageAt', 'desc'))
+  return onSnapshot(q, (snap) =>
+    cb(snap.docs.map((d) => {
+      const data = d.data()
+      return {
+        id: d.id,
+        otherUid: data.otherUid,
+        otherName: data.otherName,
+        otherHandle: data.otherHandle,
+        otherAvatar: data.otherAvatar,
+        lastMessage: data.lastMessage ?? '',
+        lastMessageAt: data.lastMessageAt?.seconds ? data.lastMessageAt.seconds * 1000 : Date.now(),
+        unread: data.unread ?? 0
+      }
+    }))
+  )
+}
+
+export function subscribeMessages(convId: string, cb: (m: Message[]) => void): () => void {
+  const q = query(collection(conversationsCol, convId, 'messages'), orderBy('createdAt', 'asc'), limit(200))
+  return onSnapshot(q, (snap) =>
+    cb(snap.docs.map((d) => {
+      const data = d.data()
+      return {
+        id: d.id,
+        senderId: data.senderId,
+        text: data.text,
+        createdAt: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now()
+      }
+    }))
+  )
+}
+
+export async function markConversationRead(uid: string, convId: string) {
+  await updateDoc(doc(collection(usersCol, uid, 'conversations'), convId), { unread: 0 })
+}
+
+export function subscribeConversationOther(convId: string, meUid: string, cb: (p: Profile | null) => void) {
+  const convRef = doc(conversationsCol, convId)
+  let unsubProfile: (() => void) | undefined
+  const unsubConv = onSnapshot(convRef, async (s) => {
+    if (!s.exists()) {
+      cb(null)
+      return
+    }
+    const participants = s.data().participants as string[]
+    const otherUid = participants.find((p) => p !== meUid)
+    if (!otherUid) {
+      cb(null)
+      return
+    }
+    unsubProfile?.()
+    unsubProfile = subscribeUser(otherUid, cb)
+  })
+  return () => {
+    unsubConv()
+    unsubProfile?.()
+  }
 }
 
 /* ---------------- Follows ---------------- */

@@ -1,28 +1,37 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
-import { Home, Compass, Bell, LogOut, Sparkles } from 'lucide-react'
+import { Home, Compass, Bell, LogOut, Sparkles, MessagesSquare } from 'lucide-react'
 import { signOut } from 'firebase/auth'
 import { auth } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
-import { subscribeNotifications } from '../lib/db'
+import { subscribeNotifications, subscribeConversations } from '../lib/db'
 import Avatar from './Avatar'
 import UsernameSetup from './UsernameSetup'
 
 const nav = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/search', label: 'Explore', icon: Compass },
+  { to: '/messages', label: 'Messages', icon: MessagesSquare, badge: true },
   { to: '/notifications', label: 'Alerts', icon: Bell, badge: true }
 ]
 
 export default function Layout() {
   const { profile } = useAuth()
   const navigate = useNavigate()
-  const [unread, setUnread] = useState(0)
+  const [badges, setBadges] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (!profile) return
     const unsub = subscribeNotifications(profile.uid, (items) => {
-      setUnread(items.filter((i) => !i.read).length)
+      setBadges((b) => ({ ...b, '/notifications': items.filter((i) => !i.read).length }))
+    })
+    return unsub
+  }, [profile])
+
+  useEffect(() => {
+    if (!profile) return
+    const unsub = subscribeConversations(profile.uid, (convs) => {
+      setBadges((b) => ({ ...b, '/messages': convs.reduce((a, c) => a + c.unread, 0) }))
     })
     return unsub
   }, [profile])
@@ -53,9 +62,9 @@ export default function Layout() {
               >
                 <item.icon className="w-[18px] h-[18px]" />
                 <span className="hidden md:inline">{item.label}</span>
-                {item.badge && unread > 0 && (
+                {item.badge && (badges[item.to] ?? 0) > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-accent text-white text-[10px] flex items-center justify-center font-bold">
-                    {unread}
+                    {badges[item.to] > 9 ? '9+' : badges[item.to]}
                   </span>
                 )}
               </NavLink>
@@ -98,9 +107,9 @@ export default function Layout() {
             >
               <item.icon className="w-5 h-5" />
               {item.label}
-              {item.badge && unread > 0 && (
+              {item.badge && (badges[item.to] ?? 0) > 0 && (
                 <span className="absolute -top-1 right-1 w-4 h-4 rounded-full bg-accent text-white text-[10px] flex items-center justify-center font-bold">
-                  {unread}
+                  {badges[item.to] > 9 ? '9+' : badges[item.to]}
                 </span>
               )}
             </NavLink>

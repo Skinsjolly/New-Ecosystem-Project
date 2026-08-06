@@ -8,6 +8,7 @@ import {
   timeAgo, triggerNotificationForPost
 } from '../lib/db'
 import Avatar from './Avatar'
+import ReactionRow from './ReactionRow'
 
 export default function PostCard({ post }: { post: Post }) {
   const { user, profile } = useAuth()
@@ -114,6 +115,7 @@ export default function PostCard({ post }: { post: Post }) {
               <Repeat2 className="w-[18px] h-[18px]" />
               {post.repostCount > 0 && <span>{post.repostCount}</span>}
             </button>
+            <ReactionRow post={post} />
           </div>
         </div>
       </div>

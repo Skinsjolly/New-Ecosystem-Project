@@ -6,6 +6,7 @@ import { subscribePost, timeAgo } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import CommentSection from '../components/CommentSection'
+import ReactionRow from '../components/ReactionRow'
 import { Heart, Repeat2, MessageSquare } from 'lucide-react'
 import { toggleLike, subscribeLiked, toggleRepost, subscribeReposted, triggerNotificationForPost } from '../lib/db'
 
@@ -93,6 +94,7 @@ export default function PostDetail() {
               <span className="flex items-center gap-1.5 text-sm text-ink2">
                 <MessageSquare className="w-[18px] h-[18px]" /> {post.commentCount}
               </span>
+              <ReactionRow post={post} />
               <span className="ml-auto text-sm text-ink2">{timeAgo(post.createdAt)}</span>
             </div>
           </div>

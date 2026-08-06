@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { subscribeFollowingIds, subscribeFeed, subscribeGlobalFeed, loadOlderPosts } from '../lib/db'
 import PostComposer from '../components/PostComposer'
 import PostCard from '../components/PostCard'
+import SkyStrip from '../components/SkyStrip'
 
 type Tab = 'following' | 'global'
 
@@ -41,6 +42,7 @@ export default function Feed() {
 
   return (
     <div className="space-y-4">
+      <SkyStrip />
       {profile && <PostComposer onPosted={() => {}} />}
 
       <div className="flex gap-2 panel rounded-full p-1">
