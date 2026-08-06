@@ -50,7 +50,8 @@ function mapProfile(d: any): Profile {
     postCount: data.postCount ?? 0,
     followerCount: data.followerCount ?? 0,
     followingCount: data.followingCount ?? 0,
-    createdAt: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now()
+    createdAt: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now(),
+    usernameSet: data.usernameSet ?? false
   }
 }
 
@@ -87,7 +88,16 @@ export async function createProfile(uid: string, handle: string, displayName: st
     postCount: 0,
     followerCount: 0,
     followingCount: 0,
+    usernameSet: true,
     createdAt: serverTimestamp()
+  })
+}
+
+export async function claimUsername(uid: string, handle: string) {
+  await updateDoc(doc(usersCol, uid), {
+    handle: handle.toLowerCase(),
+    handleLower: handle.toLowerCase(),
+    usernameSet: true
   })
 }
 

@@ -6,6 +6,7 @@ import { auth } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import { subscribeNotifications } from '../lib/db'
 import Avatar from './Avatar'
+import UsernameSetup from './UsernameSetup'
 
 const nav = [
   { to: '/', label: 'Home', icon: Home },
@@ -116,6 +117,8 @@ export default function Layout() {
           )}
         </div>
       </nav>
+
+      {profile && !profile.usernameSet && <UsernameSetup />}
     </div>
   )
 }

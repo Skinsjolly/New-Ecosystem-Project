@@ -11,9 +11,14 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == uid;
-      allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.handle == resource.data.handle
-        && request.resource.data.handleLower == resource.data.handleLower;
+      allow update: if signedIn() && request.auth.uid == uid && (
+        // Normal edits: permanent username must stay unchanged
+        (request.resource.data.handle == resource.data.handle
+          && request.resource.data.handleLower == resource.data.handleLower)
+        ||
+        // One-time claim: legacy accounts set their username for the first time
+        (!(resource.data.usernameSet == true) && request.resource.data.usernameSet == true)
+      );
       allow delete: if false;
 
       // Notifications inbox: only the owner can read/update (mark read).

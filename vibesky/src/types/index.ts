@@ -9,6 +9,7 @@ export type Profile = {
   followerCount: number
   followingCount: number
   createdAt: number
+  usernameSet: boolean
 }
 
 export type Post = {
