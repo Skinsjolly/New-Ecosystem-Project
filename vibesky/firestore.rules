@@ -12,13 +12,19 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid;
-      allow update: if signedIn() && request.auth.uid == uid && (
-        // Normal edits: permanent username must stay unchanged
-        (request.resource.data.handle == resource.data.handle
-          && request.resource.data.handleLower == resource.data.handleLower)
+      allow update: if signedIn() && (
+        // Profile edits: the owner may edit their own profile
+        // (the permanent username must stay unchanged).
+        (request.auth.uid == uid && (
+          (request.resource.data.handle == resource.data.handle
+            && request.resource.data.handleLower == resource.data.handleLower)
+          ||
+          // One-time claim: legacy accounts set their username for the first time
+          (!(resource.data.usernameSet == true) && request.resource.data.usernameSet == true)
+        ))
         ||
-        // One-time claim: legacy accounts set their username for the first time
-        (!(resource.data.usernameSet == true) && request.resource.data.usernameSet == true)
+        // Follow graph: any signed-in user may bump the follower/following counters.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount', 'followingCount'])
       );
       allow delete: if false;
 
@@ -38,20 +44,25 @@ service cloud.firestore {
         allow create, delete: if signedIn() && request.auth.uid == follower;
       }
 
-      // Per-user conversation summaries: owner only.
+      // Per-user conversation summaries: any participant may read/create/update
+      // (DMs write both participants' summaries).
       match /conversations/{cid} {
-        allow read, update: if signedIn() && request.auth.uid == uid;
-        allow create: if signedIn() && request.auth.uid == uid;
+        allow read, update, create: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(cid)).data.participants;
         allow delete: if false;
       }
     }
 
     // Posts: anyone signed in can read all posts, any signed-in user can create.
-    // Only the author can delete their own post.
+    // Only the author can delete their own post; non-authors may only update
+    // the engagement counters (likes, reposts, comments, reactions).
     match /posts/{postId} {
       allow read: if signedIn();
       allow create: if signedIn();
-      allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      allow update: if signedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'repostCount', 'commentCount', 'reactions'])
+      );
+      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
 
       // Likes / reposts (acting user only)
       match /likes/{uid} {
