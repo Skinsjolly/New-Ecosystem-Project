@@ -3,15 +3,16 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDBlMC8BmcZQGiS8lI0GKSXIqJTOpPWtuQ',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'vibesky-1bd36.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'vibesky-1bd36',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'vibesky-1bd36.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '259823049175',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:259823049175:web:ccd453d3d665813b185392',
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-M9WFS1T50G'
+const firebaseConfig: Record<string, string> = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBvuWzLAThSEPh3PwAI1Jzo7v0ZjQ4f1gI',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'aurora-social-media.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'aurora-social-media',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'aurora-social-media.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '373387083077',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:373387083077:web:463c596f76836971b9522c'
 }
+const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+if (measurementId) firebaseConfig.measurementId = measurementId
 
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 export const auth = getAuth(app)
