@@ -6,10 +6,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Users: read any profile, only the owner may update/create their own.
+    // Users: any profile is public to read (signup needs to check handle availability
+    // before the user is signed in); only the owner may update/create their own.
     // On update, the permanent username (handle) must stay unchanged.
     match /users/{uid} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid;
       allow update: if signedIn() && request.auth.uid == uid && (
         // Normal edits: permanent username must stay unchanged
