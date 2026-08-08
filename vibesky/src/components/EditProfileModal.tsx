@@ -1,17 +1,16 @@
-import { useRef, useState } from 'react'
-import { X, Camera } from 'lucide-react'
+import { useState } from 'react'
+import { X } from 'lucide-react'
 import type { Profile } from '../types'
 import { useAuth } from '../context/AuthContext'
-import { updateUserProfile, uploadImage } from '../lib/db'
+import { updateUserProfile } from '../lib/db'
 import Avatar from './Avatar'
 
 export default function EditProfileModal({ profile, onClose }: { profile: Profile; onClose: () => void }) {
   const { user } = useAuth()
   const [name, setName] = useState(profile.name)
   const [bio, setBio] = useState(profile.bio)
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl)
+  const [avatarUrl] = useState(profile.avatarUrl)
   const [busy, setBusy] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
 
   async function save() {
     if (!user || busy) return
@@ -41,24 +40,7 @@ export default function EditProfileModal({ profile, onClose }: { profile: Profil
         <div className="flex flex-col items-center gap-3 mb-4">
           <div className="relative">
             <Avatar src={avatarUrl} name={name} size={88} />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full btn-primary flex items-center justify-center"
-              title="Change avatar"
-            >
-              <Camera className="w-4 h-4" />
-            </button>
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={async (e) => {
-              const f = e.target.files?.[0]
-              if (f && user) setAvatarUrl(await uploadImage(f, user.uid))
-            }}
-          />
         </div>
 
         <label className="block text-xs text-ink2 mb-1">Display name</label>
